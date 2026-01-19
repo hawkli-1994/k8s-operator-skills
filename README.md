@@ -16,15 +16,29 @@ This skill provides everything needed to help developers build production-ready 
 ### Code Patterns (patterns/)
 - **crd.go** - Custom Resource Definition patterns with validation
 - **reconciler.go** - Complete reconciler implementation with finalizers, status updates
+- **advanced-reconciler.go** - Production patterns: leader election, watches, retries, conflict resolution
 - **webhook.go** - Validation and defaulting webhook patterns
 - **test.go** - Unit and integration test patterns with fake client and envtest
 
 ### Examples (examples/)
-- **README.md** - Comprehensive example documentation
-- **simple-operator/** - Complete working example of a simple operator
+- **simple-operator/** - Complete runnable kubebuilder project
+  - Full project structure (go.mod, Makefile, main.go)
+  - Config directory with CRD, RBAC, samples
+  - Dockerfile and setup documentation
+- **database-operator/** - Real-world example managing Deployments, Services, ConfigMaps, Secrets, PVCs
+  - Multi-resource orchestration
+  - Owner references and status aggregation
+  - ConfigMap watching
 
-### Documentation
-- **docs/** - Extracted book content (when available)
+### Templates (templates/)
+- **.github/workflows/** - CI/CD workflows (lint, test, build, release)
+- **Dockerfile.multiarch** - Multi-architecture container build
+- **.golangci.yml** - Golangci-lint configuration
+
+### Documentation (docs/)
+- **ci-cd.md** - Complete CI/CD setup guide
+- **packaging.md** - Helm, OLM, Kustomize distribution guide
+- **testing-guide.md** - Unit, integration, E2E testing strategies
 
 ## Key Features
 
@@ -53,14 +67,74 @@ This skill provides everything needed to help developers build production-ready 
 - Metrics and logging
 - Multi-version API support
 
+## Installation
+
+### One-Click Installation (Recommended)
+
+The easiest way to install this skill is to use the one-line install command:
+
+```bash
+# Clone the repository
+git clone https://github.com/hawkli-1994/k8s-operator-skills.git
+cd k8s-operator-skills
+
+# The skill is now ready to use!
+```
+
+Then, in Claude Code, simply navigate to this directory:
+
+```bash
+cd /path/to/k8s-operator-skills
+```
+
+And start asking questions about Kubernetes operator development!
+
+### Manual Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/hawkli-1994/k8s-operator-skills.git
+cd k8s-operator-skills
+
+# Verify the structure
+ls -la
+```
+
+You should see:
+- `skill.md` - Main skill documentation
+- `patterns/` - Reusable code patterns
+- `examples/` - Complete working examples
+- `docs/` - Detailed guides
+
+### Quick Start After Installation
+
+Once installed, try these prompts in Claude Code:
+
+```
+# Get started
+"Help me create a Kubernetes operator for managing databases"
+
+# Learn patterns
+"Show me the advanced reconciler patterns"
+
+# Use examples
+"Explain the simple-operator example"
+"How do I deploy the database operator?"
+
+# Get help with specific tasks
+"How do I set up CI/CD for my operator?"
+"Write tests for my reconciler"
+```
+
 ## How to Use
 
 ### For Users
 
-1. Load this skill in Claude Code
-2. Ask questions about building operators
-3. Request help with specific patterns
-4. Get explanations and examples
+1. **Install the skill** (see Installation above)
+2. Navigate to the skill directory in Claude Code
+3. Ask questions about building operators
+4. Request help with specific patterns
+5. Get explanations and examples
 
 Example prompts:
 - "Help me create an operator for managing databases"
@@ -103,15 +177,39 @@ k8s-operator-skills/
 ├── skill.md              # Main skill documentation
 ├── CLAUDE.md             # Repository overview
 ├── QUICKREF.md           # Quick reference guide
+├── README.md             # This file
 ├── patterns/             # Code patterns
-│   ├── crd.go           # CRD patterns
-│   ├── reconciler.go    # Reconciler patterns
-│   ├── webhook.go       # Webhook patterns
-│   └── test.go          # Testing patterns
+│   ├── crd.go                    # CRD patterns
+│   ├── reconciler.go             # Reconciler patterns
+│   ├── advanced-reconciler.go    # Advanced production patterns
+│   ├── webhook.go                # Webhook patterns
+│   └── test.go                   # Testing patterns
 ├── examples/             # Example implementations
-│   ├── README.md        # Example docs
-│   └── simple-operator/ # Simple example
-└── docs/                 # Book content (if available)
+│   ├── README.md                  # Example docs
+│   ├── simple-operator/           # Complete runnable example
+│   │   ├── go.mod
+│   │   ├── Makefile
+│   │   ├── main.go
+│   │   ├── Dockerfile
+│   │   ├── api/v1/
+│   │   ├── controllers/
+│   │   ├── config/
+│   │   └── project-setup.md
+│   └── database-operator/         # Real-world multi-resource example
+│       ├── api/v1/
+│       ├── controllers/
+│       └── config/
+├── templates/            # Reusable templates
+│   ├── .github/workflows/
+│   │   ├── ci.yml
+│   │   ├── release.yml
+│   │   └── kind-config.yaml
+│   ├── Dockerfile.multiarch
+│   └── .golangci.yml
+└── docs/                 # Detailed guides
+    ├── ci-cd.md
+    ├── packaging.md
+    └── testing-guide.md
 ```
 
 ## Common Workflows
@@ -247,15 +345,44 @@ This skill is provided as-is for educational and development purposes.
 
 This K8s Operator Development Skill provides:
 
+### Core Content
 ✅ Complete skill documentation (skill.md)
 ✅ Repository overview (CLAUDE.md)
 ✅ Quick reference guide (QUICKREF.md)
+✅ Comprehensive README with installation guide
+
+### Code Patterns
 ✅ CRD definition patterns (patterns/crd.go)
 ✅ Reconciler implementation patterns (patterns/reconciler.go)
+✅ **Advanced production patterns** (patterns/advanced-reconciler.go)
+  - Leader election, complex watches, selective reconciliation
+  - Retry with backoff, patch strategies, conflict resolution
 ✅ Webhook patterns (patterns/webhook.go)
 ✅ Testing patterns (patterns/test.go)
-✅ Example documentation (examples/README.md)
-✅ Simple working example (examples/simple-operator/)
-✅ Comprehensive best practices and workflows
+
+### Working Examples
+✅ **Simple operator** - Complete runnable kubebuilder project
+  - Full scaffolding (go.mod, Makefile, main.go)
+  - Config structure (CRD, RBAC, manager, samples)
+  - Dockerfile and setup guide
+✅ **Database operator** - Real-world multi-resource orchestration
+  - Manages Deployments, Services, ConfigMaps, Secrets, PVCs
+  - Owner references and status aggregation
+
+### CI/CD Templates
+✅ GitHub Actions workflows (CI, Release)
+✅ Kind cluster configuration for testing
+✅ Multi-architecture Dockerfile
+✅ Golangci-lint configuration
+
+### Documentation
+✅ **CI/CD guide** (docs/ci-cd.md)
+  - Complete workflow setup and customization
+✅ **Packaging guide** (docs/packaging.md)
+  - Helm, OLM, Kustomize distribution strategies
+✅ **Testing guide** (docs/testing-guide.md)
+  - Unit, integration, E2E testing strategies
 
 The skill is ready to use for building production-ready Kubernetes operators with Go and controller-runtime!
+
+**Total: 25+ files, 4500+ lines of code and documentation**
