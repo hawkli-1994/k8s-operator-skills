@@ -1,0 +1,83 @@
+# Adds namespace to all resources.
+namespace: system
+
+# Value of this field is prepended to the
+# names of all resources, e.g. a deployment named
+# "wordpress" becomes "alices-wordpress".
+# Note that it should also match or the prefix will be cut down.
+namePrefix: cocktail-
+
+# Labels to add to all resources and selectors.
+commonLabels:
+  app.kubernetes.io/name: cocktail-operator
+  app.kubernetes.io/managed-by: kustomize
+
+resources:
+- ../crd
+- ../rbac
+- ../manager
+
+# Protect the /metrics endpoint by putting it behind auth.
+# If you want your controller-manager to expose the /metrics
+# endpoint w/o any authn/z, please comment the following line.
+#- manager_metrics_service.yaml
+
+# [WEBHOOK] To enable webhook, uncomment all the sections with [WEBHOOK] prefix.
+# patches:
+# # [WEBHOOK] To enable webhook, uncomment all the sections with [WEBHOOK] prefix.
+# - path: manager_webhook_patch.yaml
+#
+# [CERTMANAGER] To enable cert-manager, uncomment all the sections with [CERTMANAGER] prefix.
+# # Uncomment the following patches to configure the cert-manager
+# - path: manager_webhook_service_patch.yaml
+#
+# [CERTMANAGER] To enable cert-manager, uncomment all the sections with [CERTMANAGER] prefix.
+# # Uncomment the following patches to configure the cert-manager
+# - path: webhookcainjection_patch.yaml
+
+# [CERTMANAGER] To enable cert-manager, uncomment all the sections with [CERTMANAGER] prefix.
+# # uncomment the following installs the CRD crds
+# - https://github.com/cert-manager/cert-manager/releases/download/v1.13.0/cert-manager.crds.yaml
+# - https://github.com/cert-manager/cert-manager/releases/download/v1.13.0/cert-manager.yaml
+
+# [WEBHOOK] To enable webhook, uncomment all the sections with [WEBHOOK] prefix.
+# # the following config is for teaching kustomize where to look at when substituting vars.
+# configMapGenerator:
+# - name: manager-config
+#   files:
+#   - controller_manager_config.yaml
+#
+# [WEBHOOK] To enable webhook, uncomment all the sections with [WEBHOOK] prefix.
+# # uncomment the following vars to enable the injection of the cert-manager
+# # CA certificate into the webhook's configuration.
+# vars:
+# # [CERTMANAGER] To enable cert-manager, uncomment all the sections with [CERTMANAGER] prefix.
+# - name: CERTIFICATE_NAMESPACE # namespace of the certificate CR
+#   objref:
+#     kind: Certificate
+#     group: cert-manager.io
+#     version: v1
+#     name: serving-cert # this name will match the name in the Certificate resource
+#   fieldref:
+#     fieldpath: metadata.namespace
+# # [CERTMANAGER] To enable cert-manager, uncomment all the sections with [CERTMANAGER] prefix.
+# - name: CERTIFICATE_NAME
+#   objref:
+#     kind: Certificate
+#     group: cert-manager.io
+#     version: v1
+#     name: serving-cert # this name will match the name in the Certificate resource
+# # [CERTMANAGER] To enable cert-manager, uncomment all the sections with [CERTMANAGER] prefix.
+# - name: SERVICE_NAMESPACE # namespace of the service
+#   objref:
+#     kind: Service
+#     version: v1
+#     name: webhook-service
+#   fieldref:
+#     fieldpath: metadata.namespace
+# # [CERTMANAGER] To enable cert-manager, uncomment all the sections with [CERTMANAGER] prefix.
+# - name: SERVICE_NAME
+#   objref:
+#     kind: Service
+#     version: v1
+#     name: webhook-service

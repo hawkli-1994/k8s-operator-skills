@@ -1,0 +1,13 @@
+apiVersion: bar.my.domain/v1
+kind: Cocktail
+metadata:
+  name: cocktail-mojito
+spec:
+  # Size is the number of cocktail servings to prepare (1-10)
+  size: 2
+  # Recipe is the type of cocktail to prepare
+  recipe: Mojito
+  # Garnish indicates whether to add garnish
+  garnish: true
+  # Instructions are custom preparation instructions
+  instructions: "Extra mint, please"

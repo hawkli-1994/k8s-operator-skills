@@ -1,0 +1,47 @@
+# Kind cluster configuration for CI/CD
+#
+# This configures a Kind cluster for integration testing.
+# Place at .github/workflows/kind-config.yaml in your project.
+
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+nodes:
+  - role: control-plane
+    image: kindest/node:v1.29.0
+    # Mount extra volumes for local development
+    extraMounts:
+      # Optional: Mount host directory for debugging
+      # - hostPath: /path/on/host
+      #   containerPath: /path/in/container
+    # Port forwarding for accessing services
+    extraPortMappings:
+      # Optional: Forward host port to node port
+      # - containerPort: 30000
+      #   hostPort: 30000
+      #   listenAddress: "127.0.0.1"
+      #   protocol: TCP
+# Optional: Add worker nodes for multi-node testing
+#  - role: worker
+#    image: kindest/node:v1.29.0
+#  - role: worker
+#    image: kindest/node:v1.29.0
+
+networking:
+  # Disable default CNI for custom CNI testing
+  # disableDefaultCNI: true
+  # Kubernetes API server port
+  apiServerAddress: "127.0.0.1"
+  apiServerPort: 6443
+  # Pod subnet
+  podSubnet: "10.244.0.0/16"
+  # Service subnet
+  serviceSubnet: "10.96.0.0/12"
+
+# Optional: Feature gates
+# featureGates:
+#   - name: CustomResourceValidation
+#     enabled: true
+
+# Optional: Runtime configuration
+# runtimeConfig:
+#   "api/all": "true"

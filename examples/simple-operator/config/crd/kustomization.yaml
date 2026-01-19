@@ -1,0 +1,5 @@
+# This kustomization.yaml is not intended to be run by itself,
+# since it relies on kustomize resources and community generators.
+resources:
+- bases/bar.my.domain_cocktails.yaml
+#+kubebuilder:scaffold:crdkustomizeresource

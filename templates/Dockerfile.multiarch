@@ -1,0 +1,111 @@
+# Multi-architecture Dockerfile for Kubernetes Operators
+#
+# This Dockerfile supports building for multiple architectures (amd64, arm64)
+# and is optimized for production use with distroless base image.
+#
+# Usage: Copy to your operator project root as Dockerfile
+
+# ============================================================
+# Stage 1: Build
+# ============================================================
+FROM golang:1.21-alpine AS builder
+
+# Install build dependencies
+RUN apk add --no-cache git ca-certificates tzdata
+
+WORKDIR /workspace
+
+# Copy go mod files
+COPY go.mod go.mod
+COPY go.sum go.sum* 2>/dev/null || true
+
+# Cache dependencies
+RUN --mount=type=cache,target=/go/pkg/mod \
+    go mod download
+
+# Copy source code
+COPY ./
+
+# Build arguments
+ARG VERSION=dev
+ARG COMMIT_SHA=
+ARG BUILD_DATE=
+
+# Build the manager binary
+# -w -s: Strip debug info to reduce binary size
+# -trimpath: Remove file system paths from binary
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
+    -a \
+    -ldflags "-X main.Version=${VERSION} -X main.CommitSHA=${COMMIT_SHA} -X main.BuildDate=${BUILD_DATE} -w -s" \
+    -trimpath \
+    -o manager-amd64 \
+    main.go
+
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build \
+    -a \
+    -ldflags "-X main.Version=${VERSION} -X main.CommitSHA=${COMMIT_SHA} -X main.BuildDate=${BUILD_DATE} -w -s" \
+    -trimpath \
+    -o manager-arm64 \
+    main.go
+
+# ============================================================
+# Stage 2: Final Image (amd64)
+# ============================================================
+FROM gcr.io/distroless/static:nonroot
+
+# Install ca-certificates if your operator makes HTTPS requests
+# COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+
+WORKDIR /
+
+# Copy the binary from builder
+COPY --from=builder /workspace/manager-amd64 /manager
+
+# User permissions
+# 65532 is the nonroot user in distroless images
+USER 65532:65532
+
+# Health checks
+HEALTHCHECK --start-period=3s --interval=10s --timeout=3s \
+    CMD ["/manager", "health-probe"]
+
+# Entry point
+ENTRYPOINT ["/manager"]
+
+# ============================================================
+# Alternative: Scratch-based image (even smaller)
+# ============================================================
+# FROM scratch
+#
+# COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+# COPY --from=builder /workspace/manager-amd64 /manager
+#
+# USER 65532:65532
+#
+# ENTRYPOINT ["/manager"]
+
+# ============================================================
+# Build Examples
+# ============================================================
+#
+# Build for current architecture:
+#   docker build -t my-operator:latest .
+#
+# Build for specific architecture:
+#   docker buildx build --platform linux/amd64 -t my-operator:amd64 .
+#   docker buildx build --platform linux/arm64 -t my-operator:arm64 .
+#
+# Build and push multi-architecture image:
+#   docker buildx build \
+#     --platform linux/amd64,linux/arm64 \
+#     -t my-operator:latest \
+#     --push \
+#     .
+#
+# Build with build arguments:
+#   docker build \
+#     --build-arg VERSION=v1.0.0 \
+#     --build-arg COMMIT_SHA=$(git rev-parse --short HEAD) \
+#     --build-arg BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ') \
+#     -t my-operator:v1.0.0 \
+#     .

@@ -1,0 +1,293 @@
+# Kubernetes Operator CI Pipeline
+#
+# This workflow provides comprehensive CI for Kubernetes operators including:
+# - Go linting and testing
+# - CRD generation verification
+# - Multi-architecture image builds
+# - Kind integration testing
+#
+# Usage: Copy to .github/workflows/ci.yml in your operator project
+
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+    tags: ['v*']
+  pull_request:
+    branches: [main, develop]
+
+env:
+  # Go version
+  GO_VERSION: '1.21'
+  # Kubernetes version for testing
+  KUBERNETES_VERSION: '1.29.0'
+  # Kind version
+  KIND_VERSION: 'v0.20.0'
+  # Image registry
+  IMAGE_REGISTRY: ghcr.io
+  # Image name (will be set to your repo)
+  IMAGE_NAME: ${{ github.repository }}
+
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+
+jobs:
+  # -------------------------------------------------------------------------
+  # Job 1: Lint and Unit Tests
+  # -------------------------------------------------------------------------
+  lint:
+    name: Lint and Unit Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Download dependencies
+        run: go mod download
+
+      - name: Run go fmt
+        run: |
+          fmt_output=$(gofmt -l .)
+          if [ -n "$fmt_output" ]; then
+            echo "The following files are not properly formatted:"
+            echo "$fmt_output"
+            exit 1
+          fi
+
+      - name: Run go vet
+        run: go vet ./...
+
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v4
+        with:
+          version: latest
+          args: --timeout=5m
+
+      - name: Run unit tests
+        run: go test -v -race -coverprofile=coverage.out ./...
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./coverage.out
+          fail_ci_if_error: false
+          verbose: true
+
+      - name: Run go mod tidy check
+        run: |
+          go mod tidy
+          git diff --exit-code go.mod go.sum || (echo "Go modules not tidy. Run 'go mod tidy'" && exit 1)
+
+  # -------------------------------------------------------------------------
+  # Job 2: Verify Manifests
+  # -------------------------------------------------------------------------
+  verify-manifests:
+    name: Verify Generated Manifests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Download dependencies
+        run: go mod download
+
+      - name: Install controller-gen
+        run: |
+          go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.14.0
+          echo "$GOPATH/bin" >> $GITHUB_PATH
+
+      - name: Install kustomize
+        run: |
+          go install sigs.k8s.io/kustomize/kustomize/v5@latest
+          echo "$GOPATH/bin" >> $GITHUB_PATH
+
+      - name: Generate manifests
+        run: make manifests
+
+      - name: Generate code
+        run: make generate
+
+      - name: Verify no changes
+        run: |
+          git diff --exit-code || (echo "Generated files differ. Run 'make manifests generate'" && exit 1)
+
+  # -------------------------------------------------------------------------
+  # Job 3: Build and Push Images
+  # -------------------------------------------------------------------------
+  build:
+    name: Build Images
+    runs-on: ubuntu-latest
+    needs: [lint, verify-manifests]
+    strategy:
+      matrix:
+        platform:
+          - linux/amd64
+          - linux/arm64
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.IMAGE_REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,prefix={{branch}}-
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: ${{ matrix.platform }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          provenance: true
+          sbom: true
+
+  # -------------------------------------------------------------------------
+  # Job 4: Integration Tests with Kind
+  # -------------------------------------------------------------------------
+  integration-test:
+    name: Integration Test (Kind)
+    runs-on: ubuntu-latest
+    needs: [build]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Download dependencies
+        run: go mod download
+
+      - name: Install kind
+        run: |
+          curl -Lo ./kind https://kind.sigs.k8s.io/dl/${{ env.KIND_VERSION }}/kind-linux-amd64
+          chmod +x ./kind
+          sudo mv ./kind /usr/local/bin/kind
+
+      - name: Create kind cluster
+        run: |
+          kind create cluster \
+            --image kindest/node:${{ env.KUBERNETES_VERSION }} \
+            --config=.github/workflows/kind-config.yaml
+
+      - name: Install CRDs
+        run: |
+          kubectl apply -f config/crd/bases/
+
+      - name: Verify CRDs
+        run: |
+          kubectl get crd || true
+          kubectl api-resources | grep myapp
+
+      - name: Run integration tests
+        run: |
+          # Install envtest
+          go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
+          export KUBEBUILDER_ASSETS=$(setup-envtest use -p path ${{ env.KUBERNETES_VERSION }})
+          # Run integration tests
+          go test -v -timeout=10m ./... -integration
+
+      - name: Get cluster logs
+        if: always()
+        run: |
+          kubectl logs -n kube-system -l component=kube-controller-manager
+          kubectl logs -n local-path-storage -l app=local-path-provisioner
+
+      - name: Delete kind cluster
+        if: always()
+        run: kind delete cluster
+
+  # -------------------------------------------------------------------------
+  # Job 5: Security Scanning
+  # -------------------------------------------------------------------------
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    needs: [build]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Upload Trivy results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+  # -------------------------------------------------------------------------
+  # Job 6: Release (tagged commits only)
+  # -------------------------------------------------------------------------
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    needs: [integration-test, security]
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate release notes
+        run: |
+          # Generate changelog from git commits
+          git log --pretty=format:"- %s" $(git describe --tags --abbrev=0 HEAD^)..HEAD > release_notes.md
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          body_path: release_notes.md
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

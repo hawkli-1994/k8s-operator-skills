@@ -1,0 +1,9 @@
+apiVersion: bar.my.domain/v1
+kind: Cocktail
+metadata:
+  name: cocktail-margarita
+spec:
+  size: 1
+  recipe: Margarita
+  garnish: true
+  instructions: "Salt on the rim"

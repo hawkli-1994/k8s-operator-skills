@@ -1,0 +1,23 @@
+apiVersion: my.domain/v1
+kind: Database
+metadata:
+  name: postgres-demo
+spec:
+  # Number of database instances
+  replicas: 1
+  # Container image
+  image: postgres:15
+  # Storage size in MiB
+  storage: 1024
+  # Database name
+  databaseName: appdb
+  # Database user
+  userName: appuser
+  # Secret containing password (will be created if doesn't exist)
+  passwordSecretName: postgres-demo-password
+  # ConfigMap with additional settings (optional)
+  configMapName: postgres-demo-config
+  # Service type
+  serviceType: ClusterIP
+  # Storage class
+  storageClass: standard
