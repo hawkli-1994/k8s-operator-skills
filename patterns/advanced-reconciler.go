@@ -4,30 +4,118 @@ package patterns
 //
 // This file demonstrates advanced patterns for building production-ready Kubernetes operators.
 // These patterns go beyond basic reconciliation to handle real-world scenarios.
+//
+// NOTE: This file uses placeholder types for demonstration purposes.
+// When using these patterns in your code, replace:
+// - MyResource -> Your custom resource type
+// - MyResourceList -> Your custom resource list type
+// - Adjust field names and types as needed
+//
+// ==============================================================================
+// PLACEHOLDER TYPES - Replace with your actual CRD types
+// ==============================================================================
+
+// MyResource represents a placeholder custom resource
+type MyResource struct {
+	metav1.TypeMeta
+	metav1.ObjectMeta
+	Spec   MyResourceSpec
+	Status MyResourceStatus
+}
+
+// MyResourceList is a list of MyResources
+type MyResourceList struct {
+	metav1.TypeMeta
+	metav1.ListMeta
+	Items []MyResource
+}
+
+// MyResourceSpec defines the desired state
+type MyResourceSpec struct {
+	Replicas        int32
+	ConfigMapName   string
+	SecretName      string
+	Image           string
+}
+
+// MyResourceStatus defines the observed state
+type MyResourceStatus struct {
+	Phase             string
+	ReadyReplicas     int32
+	ObservedGeneration int64
+	Conditions        []metav1.Condition
+}
+
+// SetCondition sets a condition
+func (m *MyResource) SetCondition(conditionType string, status metav1.ConditionStatus, reason, message string) {
+	newCondition := metav1.Condition{
+		Type:               conditionType,
+		Status:             status,
+		Reason:             reason,
+		Message:            message,
+		LastTransitionTime: metav1.Now(),
+	}
+
+	found := false
+	for i, condition := range m.Status.Conditions {
+		if condition.Type == conditionType {
+			if condition.Status != newCondition.Status {
+				condition.LastTransitionTime = newCondition.LastTransitionTime
+			}
+			m.Status.Conditions[i] = newCondition
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		m.Status.Conditions = append(m.Status.Conditions, newCondition)
+	}
+}
+
+// IsReady returns true if ready
+func (m *MyResource) IsReady() bool {
+	for _, condition := range m.Status.Conditions {
+		if condition.Type == "Ready" && condition.Status == metav1.ConditionTrue {
+			return true
+		}
+	}
+	return false
+}
+
+// ==============================================================================
+// END PLACEHOLDER TYPES
+// ==============================================================================
 
 import (
 	"context"
 	"fmt"
 	"time"
 
+	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/wait"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/util/retry"
+	"k8s.io/client-go/util/workqueue"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 )
 
 // MyResourceReconciler reconciles a MyResource object
