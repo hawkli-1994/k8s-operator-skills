@@ -83,31 +83,24 @@ git clone https://github.com/hawkli-1994/k8s-operator-skills.git ~/.claude/skill
 
 The skill will be automatically available when you start working on Kubernetes operator projects!
 
-### Option 2: Manual Installation
+### Option 2: Browse Repository (For Learning)
+
+If you just want to browse the code and documentation without installing as a skill:
 
 ```bash
-# Clone to a custom location
+# Clone to any location
 git clone https://github.com/hawkli-1994/k8s-operator-skills.git
 cd k8s-operator-skills
-
-# Verify the structure
-ls -la
 ```
 
-You should see:
-- `SKILL.md` - Main skill file (with frontmatter for Claude)
-- `skill.md` - Detailed skill documentation
-- `patterns/` - Reusable code patterns
-- `examples/` - Complete working examples
-- `templates/` - CI/CD templates
-- `docs/` - Detailed guides
+**Note:** This will NOT install it as a Claude skill. The skill will only be available in the cloned directory, not globally across all conversations.
 
-### Quick Start After Installation
+### Quick Start
 
-Once installed, you can immediately start using the skill. Try these prompts:
+Once installed, the skill is automatically available. Try these prompts:
 
 ```
-# Get started with operator development
+# Get started
 "Help me create a Kubernetes operator for managing databases"
 
 # Learn advanced patterns
@@ -124,22 +117,6 @@ Once installed, you can immediately start using the skill. Try these prompts:
 ```
 
 ## How to Use
-
-### For Users
-
-Once installed, the skill is automatically available. Simply start asking questions about Kubernetes operator development:
-
-1. **Install the skill** (see Installation above)
-2. Start a new conversation or navigate to your operator project
-3. Ask questions about building operators
-4. Request help with specific patterns
-5. Get explanations and examples
-
-Example prompts:
-- "Help me create an operator for managing databases"
-- "Show me how to add a webhook for validation"
-- "How do I implement finalizers for cleanup?"
-- "Write tests for my reconciler"
 
 ### For Claude
 
