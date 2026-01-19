@@ -69,30 +69,23 @@ This skill provides everything needed to help developers build production-ready 
 
 ## Installation
 
-### One-Click Installation (Recommended)
+### Option 1: Install as Claude Skill (Recommended)
 
-The easiest way to install this skill is to use the one-line install command:
+Install this skill to your Claude skills directory for automatic activation:
 
 ```bash
-# Clone the repository
-git clone https://github.com/hawkli-1994/k8s-operator-skills.git
-cd k8s-operator-skills
+# Clone directly to Claude skills directory
+git clone https://github.com/hawkli-1994/k8s-operator-skills.git ~/.claude/skills/k8s-operator
 
-# The skill is now ready to use!
+# The skill is now installed and ready to use!
 ```
 
-Then, in Claude Code, simply navigate to this directory:
+The skill will be automatically available when you start working on Kubernetes operator projects.
+
+### Option 2: Manual Installation
 
 ```bash
-cd /path/to/k8s-operator-skills
-```
-
-And start asking questions about Kubernetes operator development!
-
-### Manual Installation
-
-```bash
-# Clone the repository
+# Clone to a custom location
 git clone https://github.com/hawkli-1994/k8s-operator-skills.git
 cd k8s-operator-skills
 
@@ -101,21 +94,23 @@ ls -la
 ```
 
 You should see:
-- `skill.md` - Main skill documentation
+- `SKILL.md` - Main skill file (with frontmatter for Claude)
+- `skill.md` - Detailed skill documentation
 - `patterns/` - Reusable code patterns
 - `examples/` - Complete working examples
+- `templates/` - CI/CD templates
 - `docs/` - Detailed guides
 
 ### Quick Start After Installation
 
-Once installed, try these prompts in Claude Code:
+Once installed, you can immediately start using the skill. Try these prompts:
 
 ```
-# Get started
+# Get started with operator development
 "Help me create a Kubernetes operator for managing databases"
 
-# Learn patterns
-"Show me the advanced reconciler patterns"
+# Learn advanced patterns
+"Show me the advanced reconciler patterns with leader election"
 
 # Use examples
 "Explain the simple-operator example"
@@ -124,14 +119,17 @@ Once installed, try these prompts in Claude Code:
 # Get help with specific tasks
 "How do I set up CI/CD for my operator?"
 "Write tests for my reconciler"
+"Add a webhook for validation"
 ```
 
 ## How to Use
 
 ### For Users
 
+Once installed, the skill is automatically available. Simply start asking questions about Kubernetes operator development:
+
 1. **Install the skill** (see Installation above)
-2. Navigate to the skill directory in Claude Code
+2. Start a new conversation or navigate to your operator project
 3. Ask questions about building operators
 4. Request help with specific patterns
 5. Get explanations and examples

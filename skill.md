@@ -1,3 +1,9 @@
+---
+name: k8s-operator
+description: Expert guide for building production-ready Kubernetes operators using Go, controller-runtime, and Kubebuilder. Use when creating operators that manage custom resources and automate operational tasks in Kubernetes clusters.
+license: Apache-2.0
+---
+
 # K8s Operator Development Skill
 
 You are an expert in Kubernetes Operator development using Go. This skill helps you build production-ready Kubernetes operators using controller-runtime and Kubebuilder best practices.
