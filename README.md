@@ -69,18 +69,19 @@ This skill provides everything needed to help developers build production-ready 
 
 ## Installation
 
-### Option 1: Install as Claude Skill (Recommended)
+### Option 1: One-Click Install (Recommended)
 
-Install this skill to your Claude skills directory for automatic activation:
-
+**Quick install with curl:**
 ```bash
-# Clone directly to Claude skills directory
-git clone https://github.com/hawkli-1994/k8s-operator-skills.git ~/.claude/skills/k8s-operator
-
-# The skill is now installed and ready to use!
+curl -fsSL https://raw.githubusercontent.com/hawkli-1994/k8s-operator-skills/main/install.sh | bash
 ```
 
-The skill will be automatically available when you start working on Kubernetes operator projects.
+**Or manually clone to Claude skills directory:**
+```bash
+git clone https://github.com/hawkli-1994/k8s-operator-skills.git ~/.claude/skills/k8s-operator
+```
+
+The skill will be automatically available when you start working on Kubernetes operator projects!
 
 ### Option 2: Manual Installation
 
